@@ -1,0 +1,3 @@
+CHANGES:
+run_hmf.sh rm -r ./cache and train, comment line added
+save rec code in run_hmf.py
