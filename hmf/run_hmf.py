@@ -48,7 +48,7 @@ tf.app.flags.DEFINE_boolean("recommend", False,
                             "Set to True for recommend items.")
 tf.app.flags.DEFINE_string("saverec", True, "")
 tf.app.flags.DEFINE_string("solutions_dir", "../solutions", "Solutions(Results) directory.")
-tf.app.flags.DEFINE_integer("top_N_items", 1000,
+tf.app.flags.DEFINE_integer("top_N_items", 100,
                             "number of items output")
 tf.app.flags.DEFINE_boolean("recommend_new", True,
                             "Set to True for recommend new items that were not used to train.")

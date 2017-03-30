@@ -12,12 +12,18 @@ class DataHelper(object):
 
         self.items_file = 'items.csv'
         self.users_file = 'users.csv'
-        self.interactions_file = 'interactions.csv'
         self.target_items = 'targetItems.csv'
         self.target_users = 'targetUsers.csv'
 
     def read_data_frame(self, filename):
         filename = join(self.input_data_dir, filename)
+        doc = open(filename, 'r')
+        df = pd.read_csv(doc, sep="\t", header=0, dtype=str)
+        return df
+
+    def read_interactions_data_frame(self, limited_interactions_file):
+        dir = '../data_2017_filtered_interactions'
+        filename = join(dir, limited_interactions_file)
         doc = open(filename, 'r')
         df = pd.read_csv(doc, sep="\t", header=0, dtype=str)
         return df

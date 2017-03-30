@@ -19,9 +19,10 @@ u_attr_values = [[0, 1, 0, 1, 1, 0, 0,
 class ProcessData(object):
 
     def __init__(self):
-        self.data_helper_instance = DataHelper(input_dir='../data_2017_weeks',
+        self.data_helper_instance = DataHelper(input_dir='../data_2017',
                                                op_dir='../examples/dataset',
                                                preprocessing_cache='../examples/preprocessing_cache')
+        self.limited_interactions = 'target_user_interactions.csv'
         self.create_targets()
 
     def create_targets(self):
@@ -73,50 +74,41 @@ class ProcessData(object):
     def create_observations(self):
 
         print "Reading interactions"
-        df = self.data_helper_instance.read_data_frame(self.data_helper_instance.interactions_file)
+        df = self.data_helper_instance.read_interactions_data_frame(self.limited_interactions)
         col_list = list(df.columns)
         # original : user_id, item_id, interaction_type, time
         col_list[0], col_list[1], col_list[2], col_list[3] = col_list[1], col_list[0], col_list[3], col_list[2]
         df = df[col_list]
         # re-ordered: item_id, user_id, time, type
 
-        timestamp = df.iloc[:, 2]
-        week_num = [self._to_week(t) for t in timestamp]
-        max_week_num = max(week_num)
+        val_week_set = set([6, 5])
 
         encountered_items = set()
         encountered_items.update(self.t_items)
         encountered_users = set()
         encountered_users.update(self.t_users)
 
-        test_week_true_data = {}
-        user_inter_dist = {}
+        neg_users = {}
+        for u in self.t_users:
+            neg_users[u] = [0]*2
 
         print "Starting with iterations on interactions"
 
         rows = df.values
 
         te, va, tr = [], [], []
-        for row, week in zip(rows, week_num):
+        for row in rows:
+            week = self._to_week(row[2])
             encountered_items.add(row[0])
             encountered_users.add(row[1])
-            if week == max_week_num:
-                te.append(row)
-                # if row[0] in self.t_items and row[1] in self.t_users: #(Has none - cold start)
-                keystr = row[0] + '-' + row[1]
-                if keystr not in test_week_true_data:
-                    test_week_true_data[keystr] = [0] * 6
-                test_week_true_data[keystr][int(row[3])] += 1
-            elif week == max_week_num-1:
+            if week in val_week_set:
                 va.append(row)
             else:
                 tr.append(row)
-            if row[1] not in user_inter_dist:
-                user_inter_dist[row[1]] = {}
-            if week not in user_inter_dist[row[1]]:
-                user_inter_dist[row[1]][week] = [0] * 6
-            counts = user_inter_dist[row[1]][week]
-            counts[int(row[3])] += 1
+            if row[3] == '4':
+                neg_users[row[1]][0] += 1
+            else:
+                neg_users[row[1]][1] += 1
 
         # print va
         te_df = pd.DataFrame(te)
@@ -126,8 +118,7 @@ class ProcessData(object):
         self.data_helper_instance.write_data_frame('obs_tr.csv', tr_df)
         self.data_helper_instance.write_data_frame('obs_va.csv', va_df)
         self.data_helper_instance.write_data_frame('obs_te.csv', te_df)
-        self.data_helper_instance.write_cache(test_week_true_data, 'test_week_true_data')
-        self.data_helper_instance.write_cache(user_inter_dist, 'user_inter_dist')
+        self.data_helper_instance.write_cache(neg_users, 'neg_users')
         return encountered_items, encountered_users
 
     def _to_week(self, timestamp):

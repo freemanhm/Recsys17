@@ -9,6 +9,7 @@ class Evaluation(object):
         self.tag = tag
         self.prem_user = self.cache_helper_instance.load_cache('prem_user')
         self.paid_item = self.cache_helper_instance.load_cache('paid_item')
+        self.neg_users = self.cache_helper_instance.load_cache('neg_users_set')
         self.true_interactions = self.cache_helper_instance.load_cache('test_week_true_data')
         self.target_items_list = self.cache_helper_instance.load_cache('target_items_list')
         self.target_users_set = self.cache_helper_instance.load_cache('target_users_set')
@@ -17,14 +18,16 @@ class Evaluation(object):
                                                    self.target_items_list)
 
     def filter_rec(self, rec):
-        print "Recommendations for target items: Filtering to include target users only."
+        print "Recommendations for target items: Filtering to include target users only (already restricted set)" \
+              "Removing neg users"
         # dictionary mapping targetItem to its recommended users
         filtered_recs = {}
         for t_item in self.target_items_list:
             users_rec = []
             if t_item in rec:
                 for u in rec[t_item]:
-                    users_rec.append(u)
+                    if u not in self.neg_users:
+                        users_rec.append(u)
             filtered_recs[t_item] = users_rec
         print "Filtered"
         return filtered_recs

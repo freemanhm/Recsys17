@@ -25,7 +25,7 @@ then
 		echo "Run with default values"
 fi
 
-SER_PATH=/nfs/isicvlnas01/users/ksharma/recsys/examples
+SER_PATH=/nfs/isicvlnas01/users/ksharma/recsyslight/examples
 cd $SER_PATH
 # rm -r /nfs/isicvlnas01/users/ksharma/recsys/examples/cache
 # rm -r /nfs/isicvlnas01/users/ksharma/recsys/examples/train
@@ -40,11 +40,11 @@ then
 fi
 
 
-SER_PATH_HMF=/nfs/isicvlnas01/users/ksharma/recsys/hmf
+SER_PATH_HMF=/nfs/isicvlnas01/users/ksharma/recsyslight/hmf
 cd $SER_PATH_HMF
 
 # cd ../hmf/
 
-python run_hmf.py --dataset r17_4w --raw_data ../examples/dataset --data_dir ../examples/cache/r17_4w --train_dir ../examples/train/hmf_r17_4w${h}lr${lr}te${te} --item_vocab_size 30000  --vocab_min_thresh 1 --steps_per_checkpoint 300 --loss ce --learning_rate ${lr} --size $h --n_epoch $n --test ${te} --recommend ${rec}
+python run_hmf.py --dataset r17_4w --raw_data ../examples/dataset --data_dir ../examples/cache/r17_4w --train_dir ../examples/train/hmf_r17_4w${h}lr${lr}te${te} --item_vocab_size 30000  --vocab_min_thresh 1 --steps_per_checkpoint 5000 --loss ce --learning_rate ${lr} --size $h --n_epoch $n --test ${te} --recommend ${rec}
 
 echo 'finished!'
