@@ -13,6 +13,9 @@ rsync -av src $SER_PATH
 rsync -av statistics $SER_PATH
 rsync -av utils $SER_PATH
 
+# rsync -av data_2017_filtered_interactions $SER_PATH
+# rsync -av examples $SER_PATH
+
 <<COMMENT
 NOT TO DO
 rsync -av data_2017_filtered_interactions $SER_PATH

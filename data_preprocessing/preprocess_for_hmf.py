@@ -88,27 +88,30 @@ class ProcessData(object):
         encountered_users = set()
         encountered_users.update(self.t_users)
 
-        neg_users = {}
-        for u in self.t_users:
-            neg_users[u] = [0]*2
-
         print "Starting with iterations on interactions"
 
         rows = df.values
-
         te, va, tr = [], [], []
+        tr_baseline_counts = {}
+        tr_va_baseline_counts = {}
+        true_va_int_counts = {}
+
         for row in rows:
             week = self._to_week(row[2])
             encountered_items.add(row[0])
             encountered_users.add(row[1])
+            item = row[0]
+            user = row[1]
+            int_type = int(row[3])
+            key_str = item +"-"+user
+
             if week in val_week_set:
                 va.append(row)
+                self._update_count(true_va_int_counts, key_str, int_type)
             else:
                 tr.append(row)
-            if row[3] == '4':
-                neg_users[row[1]][0] += 1
-            else:
-                neg_users[row[1]][1] += 1
+                self._update_count(tr_baseline_counts, user, int_type)
+            self._update_count(tr_va_baseline_counts, user, int_type)
 
         # print va
         te_df = pd.DataFrame(te)
@@ -118,12 +121,22 @@ class ProcessData(object):
         self.data_helper_instance.write_data_frame('obs_tr.csv', tr_df)
         self.data_helper_instance.write_data_frame('obs_va.csv', va_df)
         self.data_helper_instance.write_data_frame('obs_te.csv', te_df)
-        self.data_helper_instance.write_cache(neg_users, 'neg_users')
+
+        self.data_helper_instance.write_cache(true_va_int_counts, 'val_interaction_counts')
+        self.data_helper_instance.write_cache(tr_baseline_counts, 'tr_baseline_counts')
+        self.data_helper_instance.write_cache(tr_va_baseline_counts, 'tr_va_baseline_counts')
+
+        # save validation interaction counts - for local evaluations
         return encountered_items, encountered_users
 
     def _to_week(self, timestamp):
         t = int(timestamp)
         return datetime.fromtimestamp(t).isocalendar()[1]
+
+    def _update_count(self, count_dict, key_str, int_type):
+        if key_str not in count_dict:
+            count_dict[key_str] = [0]*6
+        count_dict[key_str][int_type] += 1
 
 
 def main():
