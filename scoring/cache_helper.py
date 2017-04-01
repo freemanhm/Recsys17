@@ -18,7 +18,7 @@ def read_obs(files, dataset):
 
 def get_obs(dataset, filename):
     filepath = join(dataset, filename)
-    df = pd.read_csv(filepath, delimiter='\t', dtype='str')
+    df = pd.read_csv(filepath, delimiter='\t')
     return df
 
 
@@ -30,4 +30,3 @@ def log_recs(recs, filename, sol_dir):
 def read_recs(filename, sol_dir):
     f = open(join(sol_dir, filename), 'rb')
     return pickle.load(f)
-

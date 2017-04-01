@@ -2,15 +2,15 @@
 
 SER_PATH=/nfs/isicvlnas01/users/ksharma/recsyslight/
 
-JO_LOCAL=/nfs/isicvlnas01/users/ksharma/recsyslight/src/jobop_local.txt
-JE_LOCAL=/nfs/isicvlnas01/users/ksharma/recsyslight/src/joberr_local.txt
+JO_LOCAL=/nfs/isicvlnas01/users/ksharma/recsyslight/src/jobop_local_cpu.txt
+JE_LOCAL=/nfs/isicvlnas01/users/ksharma/recsyslight/src/joberr_local_cpu.txt
 
-JO_ONLINE=/nfs/isicvlnas01/users/ksharma/recsyslight/src/jobop_ol.txt
-JE_ONLINE=/nfs/isicvlnas01/users/ksharma/recsyslight/src/joberr_ol.txt
+JO_ONLINE=/nfs/isicvlnas01/users/ksharma/recsyslight/src/jobop_ol_cpu.txt
+JE_ONLINE=/nfs/isicvlnas01/users/ksharma/recsyslight/src/joberr_ol_cpu.txt
 
 # Training and Recommendations
-qsub -S /bin/bash -l gpu=1 -q isicvl01.q -o $JO_LOCAL -e $JE_LOCAL -V hmf_32_1_1000_train_rec_local_eval.sh
-qsub -S /bin/bash -l gpu=1 -q isicvl01.q -o $JO_ONLINE -e $JE_ONLINE -V hmf_32_1_1000_train_rec_online_subm.sh
+qsub -S /bin/bash -l gpu=0 -q isicvl01.q -o $JO_LOCAL -e $JE_LOCAL -V hmf_31_1_1000_train_rec_local_eval.sh
+qsub -S /bin/bash -l gpu=0 -q isicvl01.q -o $JO_ONLINE -e $JE_ONLINE -V hmf_31_1_1000_train_rec_online_subm.sh
 
 # qsub -S /bin/bash -l gpu=0 -q isicvl01.q -o $JO_ONLINE -e $JE_ONLINE -V prep.sh
 

@@ -5,9 +5,14 @@ SER_PATH=/nfs/isicvlnas01/users/ksharma/recsyslight
 cd $SER_PATH
 
 cd $SER_PATH/data_reduction
+python limit_interactions_by_less.py
+
+<<COMMENT
+cd $SER_PATH/data_reduction
 echo "Starting"
 python clean_interactions.py
 echo "Done"
+COMMENT
 
 <<COMMENT
 python clean_interactions.py

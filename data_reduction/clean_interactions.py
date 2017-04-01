@@ -13,6 +13,8 @@ Removal of duplicates
 Removal of impressions
 Removal of negatives between pairs that have postive interactions (Retain neg only type)
 """
+
+
 class LimitInteractions(object):
 
     def create_observations(self):
@@ -37,14 +39,14 @@ class LimitInteractions(object):
             user = row[0]
             if user not in target_users:
                 continue
-            if row[2] == '4':
+            if row[2] == 4:
                 neg_inters.append(row)
-            elif row[2] != '0':
-                pos_int_pairs.add(row[0]+'-'+row[1])
+            elif row[2] != 0:
+                pos_int_pairs.add(str(row[0])+'-'+str(row[1]))
                 new_rows.append(row)
 
         for row in neg_inters:
-            key = row[0] + '-' + row[1]
+            key = str(row[0])+'-'+str(row[1])
             if key not in pos_int_pairs:
                 new_rows.append(row)
 
@@ -53,11 +55,11 @@ class LimitInteractions(object):
         self.write_data_frame(limited_interactions_file, new_df)
 
     def _to_week(self, timestamp):
-        return datetime.fromtimestamp(int(timestamp)).isocalendar()[1]
+        return datetime.fromtimestamp(timestamp).isocalendar()[1]
 
     def read_data_frame(self, filename):
         filename = join(input_data_dir, filename)
-        df = pd.read_csv(open(filename, 'r'), sep="\t", header=0, dtype=str)
+        df = pd.read_csv(open(filename, 'r'), sep="\t", header=0)
         return df
 
     def write_data_frame(self, filename, data):
@@ -71,7 +73,7 @@ class LimitInteractions(object):
         doc.readline()
         values = []
         for line in doc.readlines():
-            values.append(line.strip('\n'))
+            values.append(int(line.strip('\n')))
         return values
 
 

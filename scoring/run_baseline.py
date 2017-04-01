@@ -18,11 +18,18 @@ Local | tr obs | local_eval_items_set
 def baseline(prep_cache_dir, sol_dir):
     print "Starting Baseline"
     e = Evaluation(prep_cache_dir)
+    print "Loading cache"
     t_users = load_cache(prep_cache_dir, 'target_users_set')
-    local_t_items = load_cache(prep_cache_dir, 'local_eval_t_item_set')
+    local_t_items = load_cache(prep_cache_dir, 'target_items_local_set')
     local_baseline_counts = load_cache(prep_cache_dir, 'tr_baseline_counts')
     online_t_items = set(load_cache(prep_cache_dir, 'target_items_list'))
     online_baseline_counts = load_cache(prep_cache_dir, 'tr_va_baseline_counts')
+    prem_users = load_cache(prep_cache_dir, 'prem_user_set')
+    print "Done loading"
+    print "Score users by tr obs"
+    local_temp = score_users_by_obs(t_users, local_baseline_counts, prem_users)
+    print "Score users by tr+va obs"
+    online_temp = score_users_by_obs(t_users, online_baseline_counts, prem_users)
 
     strategy = [1, 2, 3]
     for s in strategy:
@@ -31,48 +38,43 @@ def baseline(prep_cache_dir, sol_dir):
         sub_filename = str(s)+'_baseline_submission.txt'
         local_rec_dump = str(s) +'_baseline_local_raw_rec'
         online_rec_dump = str(s) + '_baseline_online_raw_rec'
-        local_recs = baseline_recommend(t_users, local_baseline_counts, local_t_items, s, prep_cache_dir)
-        online_recs = baseline_recommend(t_users, online_baseline_counts, online_t_items, s, prep_cache_dir)
+        local_recs = baseline_recommend(local_temp, local_t_items, s)
+        online_recs = baseline_recommend(online_temp, online_t_items, s)
         log_recs(local_recs, local_rec_dump, sol_dir)
         log_recs(online_recs, online_rec_dump, sol_dir)
         e.format_submission(local_recs, online_recs, sol_dir, local_filename, sub_filename)
     print "Done with Baseline"
 
 
-def baseline_recommend(t_users, obs, t_items, strategy, prep_cache_dir):
-    ranked = rank_by_activity(t_users, obs, strategy, prep_cache_dir)
+def baseline_recommend(temp_list, t_items, strategy):
+    ranked = rank_by_activity(temp_list, strategy)
     recs = recommend(ranked, t_items)
     return recs
 
 
 def recommend(activity_ranked_users, target_items_list):
+    u_integers = []
+    for user in activity_ranked_users:
+        u_integers.append(user)
     recs = {}
     for t in target_items_list:
-        recs[t] = activity_ranked_users
+        recs[t] = u_integers
     return recs
 
 
-def rank_by_activity(t_users, obs, strategy, prep_cache_dir):
-    print 'Ranking by activity'
-    prem_users = load_cache(prep_cache_dir, 'prem_user')
-    s = score_users(t_users, obs, strategy, prem_users)
-    ranked = get_rank_list(s)
-    print "Finished rank by activity"
-    return ranked
-
-
-def score_users(t_users, obs, strategy, prem_users):
-    user_scores_weighted, user_scores_nonweighted, neg_users = score_users_by_obs(t_users, obs, prem_users)
+def rank_by_activity(temp_list, strategy):
+    s = {}
+    user_scores_weighted, user_scores_nonweighted, neg_users = temp_list[0], temp_list[1], temp_list[2]
     if strategy == 1:
-        return user_scores_weighted
+        s = user_scores_weighted
     elif strategy == 2:
-        return filter_out_neg(user_scores_weighted, neg_users)
+        s = filter_out_neg(user_scores_weighted, neg_users)
     elif strategy == 3:
-        return filter_out_neg(user_scores_nonweighted, neg_users)
+        s = filter_out_neg(user_scores_nonweighted, neg_users)
     elif strategy == 4:
-        return user_scores_nonweighted
-    else:
-        return {}
+        s = user_scores_nonweighted
+    ranked = get_rank_list(s)
+    return ranked
 
 
 def filter_out_neg(user_scores, neg_users):
@@ -126,30 +128,3 @@ if __name__ == '__main__':
     prep_cache_dir = "../examples/preprocessing_cache"
     sol_dir = "../solutions"
     baseline(prep_cache_dir, sol_dir)
-
-
-"""
-for row in obs:
-        user = row[1]
-        int_type = row[3]
-        # re-ordered: item_id, user_id, time, type
-        if int_type == '4':
-            neg_users.add(user)
-        if user not in user_scores_weighted:
-            user_scores_weighted[user] = 0
-        if user not in user_scores_nonweighted:
-            user_scores_nonweighted[user] = 0
-        user_scores_nonweighted[user] += 1
-        add_score = 0
-        if int_type == '1':
-            add_score += 1
-        elif int_type == '2' or int_type == '3':
-            add_score += 5
-        elif int_type == '5':
-            add_score += 20
-        elif int_type == '4':
-            add_score -= 10
-        premium_boost = 2 if user in prem_users else 1
-        add_score *= premium_boost
-        user_scores_weighted[user] += add_score
-"""

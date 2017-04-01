@@ -10,6 +10,8 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 sys.path.insert(0, '../utils')
 sys.path.insert(0, '../attributes')
+sys.path.insert(0, '../scoring')
+
 import pickle
 
 from input_attribute import read_data
@@ -18,6 +20,7 @@ from prepare_train import positive_items, item_frequency, sample_items
 # datasets, paths, and preprocessing
 tf.app.flags.DEFINE_string("dataset", "xing", ".")
 tf.app.flags.DEFINE_string("raw_data", "../raw_data", "input data directory")
+tf.app.flags.DEFINE_string("prep_dir", "../examples/preprocessing_cache", "Preprocessing cache directory used in evaluation.")
 tf.app.flags.DEFINE_string("data_dir", "./cache0", "Cached data directory")
 tf.app.flags.DEFINE_string("train_dir", "./tmp", "Training directory.")
 tf.app.flags.DEFINE_boolean("test", False, "Test on test splits")
@@ -47,7 +50,6 @@ tf.app.flags.DEFINE_integer("steps_per_checkpoint", 4000,
 tf.app.flags.DEFINE_boolean("recommend", False,
                             "Set to True for recommend items.")
 tf.app.flags.DEFINE_string("saverec", True, "")
-tf.app.flags.DEFINE_string("solutions_dir", "../solutions", "Solutions(Results) directory.")
 tf.app.flags.DEFINE_integer("top_N_items", 100,
                             "number of items output")
 tf.app.flags.DEFINE_boolean("recommend_new", True,
@@ -408,42 +410,33 @@ def recommend(target_uids=[], raw_data=FLAGS.raw_data, data_dir=FLAGS.data_dir,
 def compute_scores(raw_data_dir=FLAGS.raw_data, data_dir=FLAGS.data_dir,
                    dataset=FLAGS.dataset, save_recommendation=FLAGS.saverec,
                    train_dir=FLAGS.train_dir, test=FLAGS.test):
-  '''
-  from evaluate import Evaluation as Evaluate
-  evaluation = Evaluate(raw_data_dir, test=test)
 
-  R = recommend(evaluation.get_uids(), data_dir=data_dir)
+  from evaluate import Evaluation
+  from post_processing import filter_out_negs
+  e = Evaluation(FLAGS.prep_dir)
+  if test:
+    reclogfile = "online_raw_rec_hmf"
+    t_ids = pickle.load(open(os.path.join(raw_data_dir, 'targets'), 'rb'))
+  else:
+    reclogfile = "local_raw_rec_hmf"
+    t_ids = pickle.load(open(os.path.join(raw_data_dir, 'targets_local'), 'rb'))
 
-  evaluation.eval_on(R)
-  scores_self, scores_ex = evaluation.get_scores()
-  mylog("====evaluation scores (NDCG, RECALL, PRECISION, MAP) @ 2,5,10,20,30====")
-  mylog("METRIC_FORMAT (self): {}".format(scores_self))
-  mylog("METRIC_FORMAT (ex  ): {}".format(scores_ex))
+  R = recommend(t_ids, data_dir=data_dir)
   if save_recommendation:
-    name_inds = os.path.join(train_dir, "indices.npy")
-    np.save(name_inds, rec)
-  '''
-
-  from evaluate import Evaluation as Evaluate
-  evaluation = Evaluate(raw_data_dir, test=test)
-
-  # mylog(evaluation.get_uids())
-  R = recommend(evaluation.get_uids(), data_dir=data_dir)
-  # R = recommend(target_uids, data_dir=data_dir)
-  # mylog(R)
-  # evaluation.eval_on(R)
-  # scores_self, scores_ex = evaluation.get_scores()
-  # mylog("====evaluation scores (NDCG, RECALL, PRECISION, MAP) @ 2,5,10,20,30====")
-  # mylog("METRIC_FORMAT (self): {}".format(scores_self))
-  # mylog("METRIC_FORMAT (ex  ): {}".format(scores_ex))
-  if save_recommendation:
-    rec_save_path = os.path.join(FLAGS.solutions_dir,"raw_rec")
+    rec_save_path = os.path.join(train_dir, reclogfile)
     pickle.dump(R, open(rec_save_path, 'wb'))
-    # name_inds = os.path.join(train_dir, "indices.npy")
-    # np.save(name_inds, R)
-  # from baseline.evaluation import Evaluation
-  #submission_eval = Evaluation('submission', R)
-  #submission_eval.evaluate_recommendations()
+
+  neg_users_set = pickle.load(open(os.path.join(FLAGS.prep_dir, 'neg_users_set'), 'rb'))
+  R_filtered = filter_out_negs(R, neg_users_set)
+
+  if test:
+    e.online_solutions_write(R, train_dir, 'online_submission.txt')
+    e.online_solutions_write(R_filtered, train_dir, 'neg_filtered_online_submission.txt')
+  else:
+    scores = e.local_eval_on(R)
+    e.local_write_scores(scores, 'local_eval_scores.txt', train_dir)
+    scores_filteredR = e.local_eval_on(R_filtered)
+    e.local_write_scores(scores_filteredR, 'neg_filtered_local_eval_scores.txt' , train_dir)
 
 
 def main(_):
