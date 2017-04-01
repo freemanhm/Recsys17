@@ -1,0 +1,6 @@
+41975, 42005,1900,1930
+
+Evaluation Score (Overall: Neg included, ItemSucess included):41975
+Evaluation Score (Positive: Neg excluded, Itemsuccess included):42005
+Evaluation Score (Overall_UserSuccess: Neg included, Itemsuccess excluded):1900
+Evaluation Score (Positive_UserSuccess: Neg excluded, Itemsuccess excluded):1930

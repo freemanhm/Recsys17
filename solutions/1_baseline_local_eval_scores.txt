@@ -1,0 +1,6 @@
+41112, 41262,2387,2537
+
+Evaluation Score (Overall: Neg included, ItemSucess included):41112
+Evaluation Score (Positive: Neg excluded, Itemsuccess included):41262
+Evaluation Score (Overall_UserSuccess: Neg included, Itemsuccess excluded):2387
+Evaluation Score (Positive_UserSuccess: Neg excluded, Itemsuccess excluded):2537
