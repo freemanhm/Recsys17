@@ -55,6 +55,9 @@ tf.app.flags.DEFINE_integer("top_N_items", 100,
 tf.app.flags.DEFINE_boolean("recommend_new", True,
                             "Set to True for recommend new items that were not used to train.")
 
+# attribute model variants
+tf.app.flags.DEFINE_boolean("no_user_id", False, "use user id or not")
+
 # nonlinear
 tf.app.flags.DEFINE_string("nonlinear", 'linear', "nonlinear activation")
 tf.app.flags.DEFINE_integer("hidden_size", 500, "when nonlinear proj used")
@@ -129,6 +132,7 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
           logits_size_tr=FLAGS.item_vocab_size, thresh=FLAGS.item_vocab_min_thresh,
           use_user_feature=FLAGS.use_user_feature,
           use_item_feature=FLAGS.use_item_feature,
+          no_user_id=FLAGS.no_user_id,
           batch_size=FLAGS.batch_size, steps_per_checkpoint=FLAGS.steps_per_checkpoint,
           loss_func=FLAGS.loss, max_patience=FLAGS.patience, go_test=FLAGS.test,
           max_epoch=FLAGS.n_epoch, sample_type=FLAGS.sample_type, power=FLAGS.power,
@@ -155,6 +159,7 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
       thresh=thresh,
       use_user_feature=use_user_feature,
       use_item_feature=use_item_feature,
+      no_user_id=no_user_id,
       test=test,
       mylog=mylog)
 
