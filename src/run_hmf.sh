@@ -54,4 +54,9 @@ dfn=1
 dfrec=True
 # rm -r /nfs/isicvlnas01/users/ksharma/recsyslight/examples/cache
 # rm -r /nfs/isicvlnas01/users/ksharma/recsyslight/examples/train
+
+curl -vv -XPOST -H 'Authorization: Bearer QS1SZWNzeXNmZWI2MmFhYi1hZDZlLTRmMjktOTQwZS1iYTc2NWQzNTVmNGQ=' 'https://recsys.xing.com/api/submission?label=OnlineHMF31P2500' --data-binary online_submission.txt
+
 COMMENT
+
+

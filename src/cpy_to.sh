@@ -19,3 +19,6 @@ rsync -av examples $SER_PATH
 rsync -av solutions $SER_PATH
 rsync -av stats $SER_PATH
 COMMENT
+
+
+# rsync -av ./obs_te.csv isicvl01:/nfs/isicvlnas01/users/ksharma/recsyslight/examples/dataset

@@ -151,7 +151,7 @@ class ProcessData(object):
                     count_per_item[item][1] += 1
 
         # print va
-        te_df = pd.DataFrame(te, columns=obs_cols)
+        te_df = pd.DataFrame(va, columns=obs_cols)
         va_df = pd.DataFrame(va, columns=obs_cols)
         tr_df = pd.DataFrame(tr, columns=obs_cols)
         # print va_df
