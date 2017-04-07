@@ -86,13 +86,13 @@ def load_raw_data(data_dir, _submit=0):
   if _submit == 1:    
     interact_tr = np.append(interact_tr, interact_va, 0)
     data_tr = zip(list(interact_tr[:, 0]), list(interact_tr[:, 1]), 
-      list(interact_tr[:, 2]))
+      list(interact_tr[:, 2]), list(interact_tr[:, 3]))
     data_va = zip(list(interact_te[:, 0]), list(interact_te[:, 1]), 
-      list(interact_te[:, 2]))
+      list(interact_te[:, 2]), list(interact_te[:, 3]))
   else:
     data_tr = zip(list(interact_tr[:, 0]), list(interact_tr[:, 1]), 
-      list(interact_tr[:, 2]))
+      list(interact_tr[:, 2]), list(interact_tr[:, 3]))
     data_va = zip(list(interact_va[:, 0]), list(interact_va[:, 1]), 
-      list(interact_va[:, 2]))
+      list(interact_va[:, 2]), list(interact_va[:, 3]))
   return users, items, data_tr, data_va, u_attr, i_attr, user_index, item_index
 

@@ -67,6 +67,7 @@ class LatentProductModel(object):
     ''' this is mapped item target '''
     self.item_target = tf.placeholder(tf.int32, shape = [mb], name = "item")
     self.item_id_target = tf.placeholder(tf.int32, shape = [mb], name = "item_id")
+    self.weights = tf.placeholder(tf.float32, shape =[mb], name='weights')
 
     self.dropout = dropout
     self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
@@ -132,8 +133,10 @@ class LatentProductModel(object):
     if loss in ['warp', 'mw', 'bbpr']:
       self.set_mask, self.reset_mask = m.get_warp_mask()
 
+    batch_loss = tf.multiply(batch_loss, self.weights)
+
     self.loss = tf.reduce_mean(batch_loss)
-    self.loss_eval = tf.reduce_mean(batch_loss_eval) if loss == 'mw' else self.loss
+    self.loss_eval = tf.reduce_mean(tf.multiply(batch_loss_eval, self.weights)) if loss == 'mw' else self.loss
     # Gradients and SGD update operation for training the model.
     params = tf.trainable_variables()
     opt = tf.train.AdagradOptimizer(self.learning_rate)
@@ -153,9 +156,16 @@ class LatentProductModel(object):
 
   def step(self, session, user_input, item_input, neg_item_input=None,
            item_sampled = None, item_sampled_id2idx = None,
+           weights=None,
            forward_only=False, recommend=False, recommend_new = False, loss=None,
            run_op=None, run_meta=None):
     input_feed = {}
+
+    if weights is None:
+      input_feed[self.weights] = [1.0] * len(user_input)
+    else:
+      input_feed[self.weights] = weights
+
     if forward_only or recommend:
       input_feed[self.keep_prob.name] = 1.0
     else:
@@ -216,15 +226,22 @@ class LatentProductModel(object):
   def get_batch(self, data, loss = 'ce', hist = None):
     batch_user_input, batch_item_input = [], []
     batch_neg_item_input = []
+    interaction_types = []
 
     count = 0
     while count < self.batch_size:
-      u, i, _ = random.choice(data)
+      da = random.choice(data)
+      u, i = da[0], da[1]
+      # u, i, _, t = random.choice(data)
       batch_user_input.append(u)
       batch_item_input.append(i)
+      t = da[3] if len(da) > 3 else 0
+      if len(da) <= 3:
+        print(da)
+      interaction_types.append(t)
       count += 1
 
-    return batch_user_input, batch_item_input, batch_neg_item_input
+    return batch_user_input, batch_item_input, batch_neg_item_input, interaction_types
 
   def get_permuted_batch(self, data):
     batch_user_input, batch_item_input = [], []

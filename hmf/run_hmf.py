@@ -15,6 +15,7 @@ sys.path.insert(0, '../scoring')
 import pickle
 
 from input_attribute import read_data
+from weight import Weights
 from prepare_train import positive_items, item_frequency, sample_items
 
 # datasets, paths, and preprocessing
@@ -57,6 +58,8 @@ tf.app.flags.DEFINE_boolean("recommend_new", True,
 
 # attribute model variants
 tf.app.flags.DEFINE_boolean("no_user_id", False, "use user id or not")
+tf.app.flags.DEFINE_boolean("weighted_loss", False, "use weighted_loss or not")
+
 
 # nonlinear
 tf.app.flags.DEFINE_string("nonlinear", 'linear', "nonlinear activation")
@@ -151,7 +154,7 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
 
     mylog("reading data")
     (data_tr, data_va, u_attributes, i_attributes,item_ind2logit_ind,
-     logit_ind2item_ind, _, _) = read_data(
+     logit_ind2item_ind, user_index, item_index) = read_data(
       raw_data_dir=raw_data,
       data_dir=data_dir,
       combine_att=combine_att,
@@ -174,7 +177,6 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
     data_tr = [p for p in data_tr if (p[1] in item_ind2logit_ind)]
     data_va = [p for p in data_va if (p[1] in item_ind2logit_ind)]
     mylog("new train/dev size: %d/%d" %(len(data_tr),len(data_va)))
-
 
     item_pop, p_item = item_frequency(data_tr, power)
 
@@ -219,6 +221,10 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
       print('not implemented!')
       exit()
 
+    if FLAGS.weighted_loss:
+      wei = Weights(user_index, item_index)
+
+
     train_total_size = float(len(data_tr))
     n_epoch = max_epoch
     steps_per_epoch = int(1.0 * train_total_size / batch_size)
@@ -235,7 +241,11 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
     while True:
       ranndom_number_01 = np.random.random_sample()
       start_time = time.time()
-      (user_input, item_input, neg_item_input) = get_next_batch(data_tr)
+      (user_input, item_input, neg_item_input, types) = get_next_batch(data_tr)
+      if FLAGS.weighted_loss:
+        weights = wei.get_loss_weight(user_input, item_input, types)
+      else:
+        weights = None
 
       if loss_func in ['mw', 'mce'] and current_step % FLAGS.n_resample == 0:
         item_sampled, item_sampled_id2idx = sample_items(item_population,
@@ -245,7 +255,9 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
 
       step_loss = model.step(sess, user_input, item_input,
                              neg_item_input, item_sampled, item_sampled_id2idx, loss=loss_func,
-                             run_op=run_options, run_meta=run_metadata)
+                             weights=weights, run_op=run_options, run_meta=run_metadata)
+      if weights is not None:
+        step_loss = step_loss * batch_size / sum(weights)
 
       step_time += (time.time() - start_time) / steps_per_checkpoint
       loss += step_loss / steps_per_checkpoint
@@ -294,12 +306,24 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
           lt = data_va[idx_s:idx_e]
           user_va = [x[0] for x in lt]
           item_va = [x[1] for x in lt]
+          if len(lt[0]) > 3:
+            type_va = [x[3] for x in lt]
+
+          if FLAGS.weighted_loss:
+            weights = wei.get_loss_weight(user_va, item_va, type_va)
+          else:
+            weights = None
+
           for _ in range(repeat):
             item_va_neg = None
             the_loss = 'warp' if loss_func == 'mw' else loss_func
             eval_loss0 = model.step(sess, user_va, item_va, item_va_neg,
                                     None, None, forward_only=True,
+                                    weights=weights,
                                     loss=the_loss)
+            if weights is not None:
+              eval_loss0 = eval_loss0 * len(weights) / sum(weights)
+
             eval_loss += eval_loss0
             count_va += 1
         eval_loss /= count_va

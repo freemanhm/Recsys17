@@ -3,3 +3,8 @@ solutions/*
 .idea/*
 Recsys17.iml
 a_reference_code
+test/*
+*/*.pyc
+examples/cache/*
+examples/train/*
+jobs/*

@@ -19,7 +19,8 @@ def item_frequency(data_tr, power):
   ''' count item frequency and compute sampling prob'''
   item_counts = {}  
   item_population = set([])
-  for u, i, _ in data_tr:
+  for da in data_tr:
+    u, i = da[0], da[1]
     item_counts[i] = 1 if i not in item_counts else item_counts[i] + 1
     item_population.add(i)
   item_population = list(item_population)
