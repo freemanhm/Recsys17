@@ -36,12 +36,14 @@ def item_frequency(data_tr, power):
 
 def positive_items(data_tr, data_va):
   hist, hist_va = {}, {}
-  for u, i, _ in data_tr:
+  for da in data_tr:
+    u, i = da[0], da[1]
     if u not in hist:
       hist[u] = set([i])
     else:
       hist[u].add(i)
-  for u, i, _ in data_va:
+  for da in data_va:
+    u, i = da[0], da[1]
     if u not in hist_va:
       hist_va[u] = set([i])
     else:

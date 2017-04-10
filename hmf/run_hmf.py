@@ -256,8 +256,8 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
       step_loss = model.step(sess, user_input, item_input,
                              neg_item_input, item_sampled, item_sampled_id2idx, loss=loss_func,
                              weights=weights, run_op=run_options, run_meta=run_metadata)
-      if weights is not None:
-        step_loss = step_loss * batch_size / sum(weights)
+      # if weights is not None:
+      #   step_loss = step_loss * batch_size / sum(weights)
 
       step_time += (time.time() - start_time) / steps_per_checkpoint
       loss += step_loss / steps_per_checkpoint
@@ -321,8 +321,8 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
                                     None, None, forward_only=True,
                                     weights=weights,
                                     loss=the_loss)
-            if weights is not None:
-              eval_loss0 = eval_loss0 * len(weights) / sum(weights)
+            # if weights is not None:
+            #   eval_loss0 = eval_loss0 * len(weights) / sum(weights)
 
             eval_loss += eval_loss0
             count_va += 1
