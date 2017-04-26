@@ -10,7 +10,7 @@ from load_data import load_raw_data
 def read_data(raw_data_dir='../raw_data/data/', data_dir='../cache/data/', 
   combine_att='mix', logits_size_tr='10000', 
   thresh=2, use_user_feature=True, use_item_feature=True, no_user_id=False,
-  test=False, mylog=None):
+  no_item_id=False, test=False, mylog=None):
 
   if not mylog:
     def mylog(val):
@@ -42,6 +42,9 @@ def read_data(raw_data_dir='../raw_data/data/', data_dir='../cache/data/',
 
     if no_user_id:
       users[:, 0] = 0
+    
+    if no_item_id:
+      items[:, 0] = 0
       
     if combine_att == 'het':
       het = HET(data_dir=data_dir, logits_size_tr=logits_size_tr, threshold=thresh)

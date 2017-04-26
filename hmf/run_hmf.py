@@ -58,6 +58,7 @@ tf.app.flags.DEFINE_boolean("recommend_new", True,
 
 # attribute model variants
 tf.app.flags.DEFINE_boolean("no_user_id", False, "use user id or not")
+tf.app.flags.DEFINE_boolean("no_item_id", False, "use item id or not")
 tf.app.flags.DEFINE_boolean("weighted_loss", False, "use weighted_loss or not")
 
 
@@ -135,7 +136,7 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
           logits_size_tr=FLAGS.item_vocab_size, thresh=FLAGS.item_vocab_min_thresh,
           use_user_feature=FLAGS.use_user_feature,
           use_item_feature=FLAGS.use_item_feature,
-          no_user_id=FLAGS.no_user_id,
+          no_user_id=FLAGS.no_user_id, no_item_id=FLAGS.no_item_id,
           batch_size=FLAGS.batch_size, steps_per_checkpoint=FLAGS.steps_per_checkpoint,
           loss_func=FLAGS.loss, max_patience=FLAGS.patience, go_test=FLAGS.test,
           max_epoch=FLAGS.n_epoch, sample_type=FLAGS.sample_type, power=FLAGS.power,
@@ -163,6 +164,7 @@ def train(raw_data=FLAGS.raw_data, train_dir=FLAGS.train_dir, mylog=mylog,
       use_user_feature=use_user_feature,
       use_item_feature=use_item_feature,
       no_user_id=no_user_id,
+      no_item_id=no_item_id,
       test=test,
       mylog=mylog)
 
