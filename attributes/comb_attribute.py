@@ -164,7 +164,24 @@ class HET(Comb_Attributes):
     self.create_dictionary = create_dictionary
     return
 
-  def index_mapping(self, item2fea0, i_inds, M):
+  def index_mapping(self, item2fea0, i_inds, M=None):
+    item_ind2logit_ind = {}
+    logit_ind2item_ind = {}
+
+    item_ind_count = {}
+    for i_ind in i_inds:
+      item_ind_count[i_ind] = item_ind_count[i_ind] + 1 if i_ind in item_ind_count else 1
+    ind_list = sorted(item_ind_count, key=item_ind_count.get, reverse=True)
+    assert(self.logits_size_tr <= len(ind_list)), 'Item_vocab_size should be smaller than # of appeared items'
+    ind_list = ind_list[:self.logits_size_tr]
+
+    for index, elem in enumerate(ind_list):
+      item_ind2logit_ind[elem] = index
+      logit_ind2item_ind[index] = elem
+
+    return item_ind2logit_ind, logit_ind2item_ind
+
+  def index_mapping0(self, item2fea0, i_inds, M):
     item_ind2logit_ind = {}
     logit_ind2item_ind = {}
     ind = 0
