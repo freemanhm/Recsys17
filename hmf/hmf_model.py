@@ -24,11 +24,17 @@ class LatentProductModel(object):
                logit_ind2item_ind=None, loss_function='ce', GPU=None,
                logit_size_test=None, nonlinear=None, dropout=1.0,
                n_sampled=None, indices_item=None, dtype=tf.float32,
-               top_N_items=100, hidden_size=500):
+               top_N_items=100, hidden_size=500,
+               u_attributes2=None, i_attributes2=None,
+               logit_ind2item_ind_target=None, true_targets=False,
+               new_users=False):
 
     self.user_size = user_size
     self.item_size = item_size
     self.top_N_items = top_N_items
+
+    prediction = 'target' if true_targets else 'full'
+    new_users = 'new_input' if new_users else 'input'
 
     if user_attributes is not None:
       user_attributes.set_model_size(size)
@@ -73,9 +79,12 @@ class LatentProductModel(object):
     self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
 
     m = embed_attribute.EmbeddingAttribute(user_attributes, item_attributes, mb,
-                                           self.n_sampled, 0, False, item_ind2logit_ind, logit_ind2item_ind)
+                                           self.n_sampled, 0, False, item_ind2logit_ind, 
+                                           logit_ind2item_ind, new_user_attributes=u_attributes2,
+                                           target_item_attributes=i_attributes2, 
+                                           logit_ind2item_ind_target=logit_ind2item_ind_target)
     self.att_emb = m
-    embedded_user, user_b = m.get_batch_user(self.keep_prob, False)
+    embedded_user, user_b = m.get_batch_user(self.keep_prob, False, name=new_users)
 
     if self.nonlinear in ['relu', 'tanh']:
       act = tf.nn.relu if self.nonlinear == 'relu' else tf.tanh
@@ -109,13 +118,13 @@ class LatentProductModel(object):
     # mini batch version
     if self.n_sampled is not None:
       print("sampled prediction")
-      sampled_logits = m.get_prediction(embedded_user, 'sampled')
+      sampled_logits = m.get_prediction(embedded_user, 'sampled', pool=prediction)
       # embedded_item, item_b = m.get_sampled_item(self.n_sampled)
       # sampled_logits = tf.matmul(embedded_user, tf.transpose(embedded_item)) + item_b
       target_score = m.get_target_score(embedded_user, self.item_id_target)
 
     print("non-sampled prediction")
-    logits = m.get_prediction(embedded_user)
+    logits = m.get_prediction(embedded_user, pool=prediction)
 
     loss = self.loss_function
     if loss in ['warp', 'ce', 'bbpr']:
@@ -158,7 +167,7 @@ class LatentProductModel(object):
            item_sampled = None, item_sampled_id2idx = None,
            weights=None,
            forward_only=False, recommend=False, recommend_new = False, loss=None,
-           run_op=None, run_meta=None):
+           run_op=None, run_meta=None, new_users=False):
     input_feed = {}
 
     if weights is None:
@@ -185,7 +194,8 @@ class LatentProductModel(object):
        input_feed_warp) = self.att_emb.add_input(input_feed, user_input,
                                                  item_input, neg_item_input=neg_item_input,
                                                  item_sampled = item_sampled, item_sampled_id2idx = item_sampled_id2idx,
-                                                 forward_only=forward_only, recommend=recommend, loss = loss)
+                                                 forward_only=forward_only, recommend=recommend, loss = loss,
+                                                 new_users=new_users)
 
     if not recommend:
       if not forward_only:

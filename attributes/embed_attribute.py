@@ -19,10 +19,18 @@ from mulhot_index import *
 class EmbeddingAttribute(object):
   def __init__(self, user_attributes, item_attributes, mb, n_sampled,
                input_steps=0, item_output=False,
-               item_ind2logit_ind=None, logit_ind2item_ind=None, indices_item=None,
+               item_ind2logit_ind=None, logit_ind2item_ind=None, indices_item=None, 
+               new_user_attributes=None, target_item_attributes=None, 
+               logit_ind2item_ind_target=None,
                devices=['/gpu:0']):
+
     self.user_attributes = user_attributes
     self.item_attributes = item_attributes
+    if new_user_attributes:
+      self.new_user_attributes = new_user_attributes
+    if target_item_attributes:
+      self.target_item_attributes = target_item_attributes
+
     self.batch_size = mb
     self.n_sampled = n_sampled
     self.input_steps = input_steps
@@ -35,6 +43,9 @@ class EmbeddingAttribute(object):
     self.logit_ind2item_ind = logit_ind2item_ind
     if logit_ind2item_ind is not None:
       self.logit_size = len(logit_ind2item_ind)
+    if logit_ind2item_ind_target:
+      self.logit_size_target = len(logit_ind2item_ind_target)
+
     if indices_item is not None:
       self.indices_item = indices_item
     else:
@@ -51,6 +62,11 @@ class EmbeddingAttribute(object):
     self.att = {}
     self._init_attributes(user_attributes, name='user', device=devices[0])
     self._init_attributes(item_attributes, name='item', device=devices[0])
+    # if new_user_attributes:
+    #   self._init_attributes(new_user_attributes, name='new_user', device=devices[0])
+    # if target_item_attributes:
+    #   self._init_attributes(target_item_attributes, name='target_item', device=devices[0])
+
     if self.item_output:
       self._init_attributes(item_attributes, name='item_output',
                             device=devices[-1])
@@ -72,7 +88,7 @@ class EmbeddingAttribute(object):
     # input users
     self.u_indices = {}
     self.u_indices['input'] = self._placeholders('user', 'input', mb, device=devices[0])
-
+    self.u_indices['new_input'] = self._placeholders('user', 'new_input', mb, device=devices[0])
     self.i_indices = {}
 
     # item -- positive/negative sample indices
@@ -105,6 +121,20 @@ class EmbeddingAttribute(object):
         segids_mulhot.append(tf.constant(ia.full_segids_tr[i]))
         lengths_mulhot.append(tf.constant(ia.full_lengths_tr[i]))
       self.i_indices['full'] = (indices_cat, indices_mulhot, segids_mulhot,
+                                lengths_mulhot)
+
+    ''' target version'''
+    with tf.device(devices[-1]):
+      ia = target_item_attributes
+      print("construct full prediction layer")
+      indices_cat, indices_mulhot, segids_mulhot, lengths_mulhot = [],[],[],[]
+      for i in xrange(ia.num_features_cat):
+        indices_cat.append(tf.constant(ia.full_cat_tr[i]))
+      for i in xrange(ia.num_features_mulhot):
+        indices_mulhot.append(tf.constant(ia.full_values_tr[i]))
+        segids_mulhot.append(tf.constant(ia.full_segids_tr[i]))
+        lengths_mulhot.append(tf.constant(ia.full_lengths_tr[i]))
+      self.i_indices['target'] = (indices_cat, indices_mulhot, segids_mulhot,
                                 lengths_mulhot)
 
     ''' sampled version '''
@@ -177,10 +207,10 @@ class EmbeddingAttribute(object):
         item_biases_mulhot = self.i_biases2_mulhot[i] if self.item_output else self.i_biases_mulhot[i]
         u = latent[i+offset] if isinstance(latent, list) else latent
         lengs = lengths_mulhot[i]
-        if pool == 'full':
+        if pool == 'full' or pool == 'target':
           inds = indices_mulhot[i]
           segids = segids_mulhot[i]
-          V = self.logit_size
+          V = self.logit_size if pool == 'full' else self.logit_size_target
         else:
           inds = tf.slice(indices_mulhot[i], [0], [self.sampled_mulhot_l[i]])
           segids = tf.slice(segids_mulhot[i], [0], [self.sampled_mulhot_l[i]])
@@ -219,8 +249,8 @@ class EmbeddingAttribute(object):
       target_item_emb = tf.reduce_mean(cat_l + mulhot_l, 0)
       return tf.reduce_sum(tf.multiply(latent, target_item_emb), 1) + i_bias
 
-  def get_batch_user(self, keep_prob, concat=True, no_id=False, device='/gpu:0'):
-    u_inds = self.u_indices['input']
+  def get_batch_user(self, keep_prob, concat=True, name='input', no_id=False, device='/gpu:0'):
+    u_inds = self.u_indices[name]
     with tf.device(device):
       if concat:
         embedded_user, user_b = self._get_embedded(self.user_embs_cat,
@@ -629,10 +659,12 @@ class EmbeddingAttribute(object):
 
   def add_input(self, input_feed, user_input, item_input,
                 neg_item_input=None, item_sampled = None, item_sampled_id2idx = None,
-                forward_only=False, recommend=False, loss=None):
+                forward_only=False, recommend=False, loss=None, new_users=False):
     # users
-    if self.user_attributes is not None:
+    if self.user_attributes is not None and not new_users:
       self._add_input(input_feed, 'user', user_input, 'input')
+    elif self.new_user_attributes and new_users:
+      self._add_input(input_feed, 'user', user_input, 'new_input')
     # pos
     # if self.item_attributes is not None and recommend is False and self.input_steps == 0:
     #   self._add_input(input_feed, 'item', item_input, 'pos')

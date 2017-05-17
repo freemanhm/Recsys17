@@ -33,8 +33,10 @@ def file_check(filename):
     exit(1)
   return
 
-def load_users(data_dir, sep='\t'):
+def load_users(data_dir, sep='\t', new_name=None):
   filename = join(data_dir, 'u.csv')
+  if new_name:
+    filename = join(data_dir, new_name)
   file_check(filename)
   users, attr_names, user_index = load_csv(filename)
   filename = join(data_dir, 'u_attr.csv')
@@ -45,8 +47,10 @@ def load_users(data_dir, sep='\t'):
     attr_types = [0] * len(attr_names)
   return users, (attr_names, attr_types), user_index
 
-def load_items(data_dir, sep='\t'):
+def load_items(data_dir, sep='\t', new_name=None):
   filename = join(data_dir, 'i.csv')
+  if new_name:
+    filename = join(data_dir, new_name)
   file_check(filename)
   items, attr_names, item_index = load_csv(filename)
   filename = join(data_dir, 'i_attr.csv')
@@ -71,6 +75,15 @@ def load_interactions(data_dir, sep='\t'):
     ints.append(interact)
     names.append(name)
   return ints, names[0]
+
+def load_raw_data2(data_dir, data_daily_dir):
+  users, u_attr, user_index = load_users(data_daily_dir, new_name='daily_u.csv')
+  items, i_attr, item_index = load_items(data_dir)
+  import cPickle as pickle
+  t_ids = pickle.load(open(join(data_daily_dir, 
+    'daily_target_users_set'), 'rb'))
+  t_ids = list(t_ids)
+  return users, items, u_attr, i_attr, user_index, item_index, t_ids
 
 def load_raw_data(data_dir, _submit=0):
   users, u_attr, user_index = load_users(data_dir)

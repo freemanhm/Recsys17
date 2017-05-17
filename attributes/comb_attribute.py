@@ -8,6 +8,63 @@ class Comb_Attributes(object):
   def __init__(self):
     return 
 
+  def get_attributes2(self, users, items, user_features, item_features,
+    target_item_inds):
+    # create_dictionary
+    user_feature_names, user_feature_types = user_features
+    item_feature_names, item_feature_types = item_features
+    
+    # create user feature map
+    (num_features_cat, features_cat, num_features_mulhot, features_mulhot,
+      mulhot_max_leng, mulhot_starts, mulhot_lengs, v_sizes_cat, 
+      v_sizes_mulhot) = tokenize_attribute_map(self.data_dir, users, 
+      user_feature_types, self.max_vocabulary_size, self.logits_size_tr, 
+      prefix='user')
+
+    u_attributes = attribute.Attributes(num_features_cat, features_cat, 
+      num_features_mulhot, features_mulhot, mulhot_max_leng, mulhot_starts, 
+      mulhot_lengs, v_sizes_cat, v_sizes_mulhot)
+
+    # create item feature map
+    items_cp = np.copy(items)
+    (num_features_cat2, features_cat2, num_features_mulhot2, features_mulhot2,
+      mulhot_max_leng2, mulhot_starts2, mulhot_lengs2, v_sizes_cat2, 
+      v_sizes_mulhot2) = tokenize_attribute_map(self.data_dir, 
+      items_cp, item_feature_types, self.max_vocabulary_size, self.logits_size_tr, 
+      prefix='item')
+
+    '''
+    create an (item-index <--> classification output) mapping
+    there are more than one valid mapping as long as 1 to 1 
+    '''
+    count = 0
+    item_ind2logit_ind = {}
+    logit_ind2item_ind = {}
+    for ii in target_item_inds:
+      item_ind2logit_ind[ii] = count
+      logit_ind2item_ind[count] = ii
+      count += 1
+
+
+    i_attributes = attribute.Attributes(num_features_cat2, features_cat2, 
+      num_features_mulhot2, features_mulhot2, mulhot_max_leng2, mulhot_starts2, 
+      mulhot_lengs2, v_sizes_cat2, v_sizes_mulhot2)
+
+    # set target prediction indices
+    features_cat2_tr = filter_cat(num_features_cat2, features_cat2, 
+      logit_ind2item_ind)
+
+    (full_values, full_values_tr, full_segids, full_lengths, full_segids_tr, 
+      full_lengths_tr) = filter_mulhot(self.data_dir, items, 
+      item_feature_types, self.max_vocabulary_size, logit_ind2item_ind, 
+      prefix='item')
+
+    i_attributes.set_target_prediction(features_cat2_tr, full_values_tr, 
+      full_segids_tr, full_lengths_tr)
+
+    return u_attributes, i_attributes, item_ind2logit_ind, logit_ind2item_ind
+
+
   def get_attributes(self, users, items, data_tr, user_features, item_features):
     # create_dictionary
     user_feature_names, user_feature_types = user_features

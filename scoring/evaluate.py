@@ -5,9 +5,11 @@ import pickle
 
 class Evaluation(object):
 
-    def __init__(self, prep_cache_dir):
-        self.local_eval_t_items = load_cache(prep_cache_dir, 'target_items_local_set')
-        self.t_item_list = load_cache(prep_cache_dir, 'target_items_list')
+    def __init__(self, prep_cache_dir, raw_data_dir, raw_data_daily_dir=None):
+        # self.local_eval_t_items_list = load_cache(raw_data_dir, 'target_items_local_list')
+        # self.local_eval_t_users_set = load_cache(raw_data_dir, 'target_users_local_set')
+        self.t_user_set = load_cache(raw_data_daily_dir, 'daily_target_users_set')
+        self.t_item_list = load_cache(raw_data_daily_dir, 'daily_target_items_list')
         self.true_interactions = load_cache(prep_cache_dir, 'val_interaction_counts')
         self.prem_user = load_cache(prep_cache_dir, 'prem_user_set')
         self.paid_item = load_cache(prep_cache_dir, 'paid_item_set')
