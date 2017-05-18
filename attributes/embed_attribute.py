@@ -552,17 +552,17 @@ class EmbeddingAttribute(object):
     else:
       return self.item_attributes._embedding_size_list_cat[0]
 
-  def compute_loss(self, logits, item_target, loss='ce', device='/gpu:0'):
+  def compute_loss(self, logits, item_target, loss='ce', pool='full', device='/gpu:0'):
     assert(loss in ['ce', 'mce', 'warp', 'mw', 'bbpr', 'bpr', 'bpr-hinge'])
     with tf.device(device):
       if loss == 'ce':
         return tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=item_target)
       elif loss == 'warp':
-        return self._compute_warp_loss(logits, item_target)
+        return self._compute_warp_loss(logits, item_target, pool=pool)
       elif loss == 'mw':
-        return self._compute_mw_loss(logits, item_target)
+        return self._compute_mw_loss(logits, item_target, pool=pool)
       elif loss =='bbpr':
-        return self._compute_bbpr_loss(logits, item_target)
+        return self._compute_bbpr_loss(logits, item_target, pool=pool)
       elif loss == 'bpr':
         return tf.log(1 + tf.exp(logits))
       elif loss == 'bpr-hinge':
@@ -586,11 +586,15 @@ class EmbeddingAttribute(object):
     target = tf.where(mask2, logits2, self.zero_logits[loss])
     return tf.reduce_sum(tf.nn.relu(target), 1)
 
-  def _compute_warp_loss(self, logits, item_target):
-    loss = 'warp'
+  def _compute_warp_loss(self, logits, item_target, pool='full'):
+    loss = 'warp'    
     if loss not in self.mask:
       self._prepare_warp_vars(loss)
-    V = self.logit_size
+    if pool == 'target':
+      return tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=item_target)
+
+    # V = self.logit_size
+    V = self.logit_size if pool == 'full' else self.logit_size_target
     mb = self.batch_size
     flat_matrix = tf.reshape(logits, [-1])
     idx_flattened = self.idx_flattened0 + item_target
@@ -612,7 +616,13 @@ class EmbeddingAttribute(object):
     return tf.log(1 + tf.reduce_sum(tf.nn.relu(target), 1)) # scale or not??
 
   def _prepare_warp_vars(self, loss= 'warp'):
-    V = self.n_sampled if loss == 'mw' else self.logit_size
+    if loss == 'mw':
+      V = self.n_sampled
+    elif loss == 'warp':
+      V = self.logit_size
+    elif loss == 'warp-target':
+      V = self.logit_size_target
+    # V = self.n_sampled if loss == 'mw' else self.logit_size
     mb = self.batch_size
     self.idx_flattened0 = tf.range(0, mb) * V
     self.mask[loss] = tf.Variable([True] * V * mb, dtype=tf.bool,

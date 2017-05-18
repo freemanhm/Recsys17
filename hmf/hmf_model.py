@@ -128,14 +128,14 @@ class LatentProductModel(object):
 
     loss = self.loss_function
     if loss in ['warp', 'ce', 'bbpr']:
-      batch_loss = m.compute_loss(logits, self.item_target, loss)
+      batch_loss = m.compute_loss(logits, self.item_target, loss, pool=prediction)
     elif loss in ['mw']:
       # batch_loss = m.compute_loss(sampled_logits, self.pos_score, loss)
-      batch_loss = m.compute_loss(sampled_logits, target_score, loss)
-      batch_loss_eval = m.compute_loss(logits, self.item_target, 'warp')
+      batch_loss = m.compute_loss(sampled_logits, target_score, loss, pool=prediction)
+      batch_loss_eval = m.compute_loss(logits, self.item_target, 'warp', pool=prediction)
 
     elif loss in ['bpr', 'bpr-hinge']:
-      batch_loss = m.compute_loss(neg_pos, self.item_target, loss)
+      batch_loss = m.compute_loss(neg_pos, self.item_target, loss, pool=prediction)
     else:
       print("not implemented!")
       exit(-1)
