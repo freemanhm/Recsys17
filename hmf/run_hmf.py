@@ -455,15 +455,22 @@ def recommend(target_uids=[], raw_data=FLAGS.raw_data, data_dir=FLAGS.data_dir,
         # transform result to a dictionary
         # R[user_id] = [item_id1, item_id2, ...]
 
+        if FLAGS.true_targets and FLAGS.new_users:
+            item_index_reqd = item_index2
+            logit_ind2item_ind_reqd = logit_ind2item_ind2
+        else:
+            item_index_reqd = item_index
+            logit_ind2item_ind_reqd = logit_ind2item_ind
+
         ind2id = {}
-        for iid in item_index:
-            uind = item_index[iid]
+        for iid in item_index_reqd:
+            uind = item_index_reqd[iid]
             assert(uind not in ind2id)
             ind2id[uind] = iid
         R = {}
         for i in xrange(N):
             uid = target_uids[i]
-            R[uid] = [ind2id[logit_ind2item_ind[v]] for v in list(rec[i, :])]
+            R[uid] = [ind2id[logit_ind2item_ind_reqd[v]] for v in list(rec[i, :])]
 
     return R
 
@@ -477,7 +484,6 @@ def compute_scores(raw_data_dir=FLAGS.raw_data, data_dir=FLAGS.data_dir,
 
     daily_raw_data_dir=FLAGS.raw_data_daily
 
-    # todo new item cache with daily_u.csv and old user data created and passed as flag in recommend.sh
     if true_targets:
         reclogfile = "online_raw_rec_hmf"
         t_ids = pickle.load(open(os.path.join(daily_raw_data_dir, 'daily_target_items_list'), 'rb'))
@@ -488,18 +494,24 @@ def compute_scores(raw_data_dir=FLAGS.raw_data, data_dir=FLAGS.data_dir,
         target_users = pickle.load(open(os.path.join(raw_data_dir, 'target_users_set'), 'rb'))
 
     R = recommend(t_ids, data_dir=data_dir)
+    # rec_save_path = os.path.join(daily_raw_data_dir, reclogfile)
+    # R = pickle.load(open(rec_save_path, 'rb'))
+
     if save_recommendation:
         rec_save_path = os.path.join(daily_raw_data_dir, reclogfile)
         pickle.dump(R, open(rec_save_path, 'wb'))
 
-    R = filter_recs(R, set(target_users))
+    # R = filter_recs(R, set(target_users))
 
     neg_users_set = pickle.load(open(os.path.join(FLAGS.prep_dir, 'neg_users_set'), 'rb'))
+
+    # e.online_solutions_write(R, daily_raw_data_dir, 'basic_rec_done')
     R_filtered = filter_out_negs(R, neg_users_set)
+    # e.online_solutions_write(R_filtered, daily_raw_data_dir, 'fitered_out_negs_done')
 
     if true_targets:
-        R = process_rec_single_user_online_round(R)
-        e.online_solutions_write(R, daily_raw_data_dir, 'online_submission.txt')
+        # R = process_rec_single_user_online_round(R)
+        # e.online_solutions_write(R, daily_raw_data_dir, 'online_submission.txt')
         R_filtered = process_rec_single_user_online_round(R_filtered)
         e.online_solutions_write(R_filtered, daily_raw_data_dir, 'neg_filtered_online_submission.txt')
     else:
@@ -526,7 +538,9 @@ def process_rec_single_user_online_round(recs):
             rank += 1
             if user in user_item_ranks:
                 best_rank = user_item_ranks[user][1]
-            if rank < best_rank:
+                if rank < best_rank:
+                    user_item_ranks[user] = [item, rank]
+            else:
                 user_item_ranks[user] = [item, rank]
     for item in recs.keys():
         rec_list = []

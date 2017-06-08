@@ -128,14 +128,15 @@ class EmbeddingAttribute(object):
       ia = target_item_attributes
       print("construct full prediction layer")
       indices_cat, indices_mulhot, segids_mulhot, lengths_mulhot = [],[],[],[]
-      for i in xrange(ia.num_features_cat):
-        indices_cat.append(tf.constant(ia.full_cat_tr[i]))
-      for i in xrange(ia.num_features_mulhot):
-        indices_mulhot.append(tf.constant(ia.full_values_tr[i]))
-        segids_mulhot.append(tf.constant(ia.full_segids_tr[i]))
-        lengths_mulhot.append(tf.constant(ia.full_lengths_tr[i]))
-      self.i_indices['target'] = (indices_cat, indices_mulhot, segids_mulhot,
-                                lengths_mulhot)
+      if ia:
+        for i in xrange(ia.num_features_cat):
+          indices_cat.append(tf.constant(ia.full_cat_tr[i]))
+        for i in xrange(ia.num_features_mulhot):
+          indices_mulhot.append(tf.constant(ia.full_values_tr[i]))
+          segids_mulhot.append(tf.constant(ia.full_segids_tr[i]))
+          lengths_mulhot.append(tf.constant(ia.full_lengths_tr[i]))
+        self.i_indices['target'] = (indices_cat, indices_mulhot, segids_mulhot,
+                                  lengths_mulhot)
 
     ''' sampled version '''
     print("sampled prediction layer")

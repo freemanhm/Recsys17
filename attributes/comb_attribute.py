@@ -229,7 +229,7 @@ class HET(Comb_Attributes):
     for i_ind in i_inds:
       item_ind_count[i_ind] = item_ind_count[i_ind] + 1 if i_ind in item_ind_count else 1
     ind_list = sorted(item_ind_count, key=item_ind_count.get, reverse=True)
-    assert(self.logits_size_tr <= len(ind_list)), 'Item_vocab_size should be smaller than # of appeared items'
+    assert(self.logits_size_tr <= len(ind_list)), 'Item_vocab_size %d should be smaller than # of appeared items %d' % (self.logits_size_tr, len(ind_list))
     ind_list = ind_list[:self.logits_size_tr]
 
     for index, elem in enumerate(ind_list):
