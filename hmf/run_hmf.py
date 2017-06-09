@@ -62,6 +62,7 @@ tf.app.flags.DEFINE_boolean("true_targets", False,
 tf.app.flags.DEFINE_string("raw_data_daily", "../raw_data_daily/2017-05-05",
                             "Set to point to daily raw data.")
 tf.app.flags.DEFINE_boolean("new_users", False, 'true for new users')
+tf.app.flags.DEFINE_boolean("reverse", True, 'whether to reverse users and items')
 
 # attribute model variants
 tf.app.flags.DEFINE_boolean("no_user_id", False, "use user id or not")
@@ -413,7 +414,7 @@ def recommend(target_uids=[], raw_data=FLAGS.raw_data, data_dir=FLAGS.data_dir,
             use_user_feature=use_user_feature,
             use_item_feature=use_item_feature,
             test=test,
-            mylog=mylog, raw_data_daily=FLAGS.raw_data_daily)
+            mylog=mylog, raw_data_daily=FLAGS.raw_data_daily, reverse=FLAGS.reverse)
 
         model = create_model(sess, u_attributes, i_attributes, item_ind2logit_ind,
                              logit_ind2item_ind, loss=loss, ind_item=None, 
@@ -485,13 +486,59 @@ def compute_scores(raw_data_dir=FLAGS.raw_data, data_dir=FLAGS.data_dir,
     daily_raw_data_dir=FLAGS.raw_data_daily
 
     if true_targets:
-        reclogfile = "online_raw_rec_hmf"
-        t_ids = pickle.load(open(os.path.join(daily_raw_data_dir, 'daily_target_items_list'), 'rb'))
-        target_users = pickle.load(open(os.path.join(daily_raw_data_dir, 'daily_target_users_set'), 'rb'))
+        if FLAGS.reverse:
+            user_file_name = os.path.join(daily_raw_data_dir, 'daily_target_items_list')
+        else:
+            user_file_name = os.path.join(daily_raw_data_dir, 'daily_target_users_set')
     else:
-        reclogfile = "local_raw_rec_hmf"
-        t_ids = pickle.load(open(os.path.join(raw_data_dir, 'target_items_local_list'), 'rb'))
-        target_users = pickle.load(open(os.path.join(raw_data_dir, 'target_users_set'), 'rb'))
+        if FLAGS.reverse:
+            user_file_name = os.path.join(raw_data_dir, 'daily_target_local_list')
+        else:
+            user_file_name = os.path.join(raw_data_dir, 'target_users_set')
+            
+        
+    if FLAGS.new_users:
+        if FLAGS.reverse:
+            item_file_name = os.path.join(daily_raw_data_dir, 'daily_target_users_set')
+        else:
+            item_file_name = os.path.join(daily_raw_data_dir, 'daily_target_items_list')
+    else:
+        if FLAGS.reverse:
+            item_file_name = os.path.join(raw_data_dir, 'target_users_set')
+        else:
+            item_file_name = os.path.join(raw_data_dir, 'daily_target_local_list')
+
+#     if FLAGS.reverse:
+#         target_users = pickle.load(open(user_file_name, 'rb'))
+#         t_ids = pickle.load(open(item_file_name, 'rb'))
+#     else:
+    target_users = pickle.load(open(item_file_name, 'rb'))
+    t_ids = pickle.load(open(user_file_name, 'rb'))
+        
+    #t_ids = pickle.load(open(item_file_name, 'rb'))
+    t_ids = list(t_ids)
+    target_users = set(target_users)
+    print(FLAGS.new_users, FLAGS.true_targets)
+    print(len(t_ids),len(target_users))
+    if FLAGS.reverse:
+        suf = ''
+    else:
+        suf = '_rev'
+
+    if true_targets and FLAGS.new_users:
+        reclogfile = 'online_raw_rec_hmf' + suf
+           
+    elif not FLAGS.true_targets and not FLAGS.new_users:
+        reclogfile = 'local_raw_rec_hmf' + suf
+
+#     if true_targets:
+#         reclogfile = "online_raw_rec_hmf"
+#         t_ids = pickle.load(open(os.path.join(daily_raw_data_dir, 'daily_target_items_list'), 'rb'))
+#         target_users = pickle.load(open(os.path.join(daily_raw_data_dir, 'daily_target_users_set'), 'rb'))
+#     else:
+#         reclogfile = "local_raw_rec_hmf"
+#         t_ids = pickle.load(open(os.path.join(raw_data_dir, 'target_items_local_list'), 'rb'))
+#         target_users = pickle.load(open(os.path.join(raw_data_dir, 'target_users_set'), 'rb'))
 
     R = recommend(t_ids, data_dir=data_dir)
     # rec_save_path = os.path.join(daily_raw_data_dir, reclogfile)
@@ -503,7 +550,10 @@ def compute_scores(raw_data_dir=FLAGS.raw_data, data_dir=FLAGS.data_dir,
 
     # R = filter_recs(R, set(target_users))
 
-    neg_users_set = pickle.load(open(os.path.join(FLAGS.prep_dir, 'neg_users_set'), 'rb'))
+    if not FLAGS.reverse:
+        print('no post processing is needed. return')
+        return
+    neg_users_set = pickle.load(open(os.path.join(FLAGS.prep_dir, 'neg_users_set')+suf, 'rb'))
 
     # e.online_solutions_write(R, daily_raw_data_dir, 'basic_rec_done')
     R_filtered = filter_out_negs(R, neg_users_set)
@@ -513,12 +563,12 @@ def compute_scores(raw_data_dir=FLAGS.raw_data, data_dir=FLAGS.data_dir,
         # R = process_rec_single_user_online_round(R)
         # e.online_solutions_write(R, daily_raw_data_dir, 'online_submission.txt')
         R_filtered = process_rec_single_user_online_round(R_filtered)
-        e.online_solutions_write(R_filtered, daily_raw_data_dir, 'neg_filtered_online_submission.txt')
+        e.online_solutions_write(R_filtered, daily_raw_data_dir, 'neg_filtered_online_submission' + suf + '.txt')
     else:
         scores = e.local_eval_on(R)
-        e.local_write_scores(scores, 'local_eval_scores.txt', train_dir)
+        e.local_write_scores(scores, 'local_eval_scores'+suf+'.txt', train_dir)
         scores_filteredR = e.local_eval_on(R_filtered)
-        e.local_write_scores(scores_filteredR, 'neg_filtered_local_eval_scores.txt', train_dir)
+        e.local_write_scores(scores_filteredR, 'neg_filtered_local_eval_scores'+suf+'.txt', train_dir)
 
 def filter_recs(recs, targets):
     filtered = {}

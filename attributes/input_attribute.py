@@ -4,7 +4,7 @@ import cPickle as pickle
 import sys, os
 
 sys.path.insert(0, '../utils')
-from load_data import load_raw_data, load_raw_data2
+from load_data import load_raw_data, load_raw_data2, load_raw_data3
 
 
 def read_data(raw_data_dir='../raw_data/data/', data_dir='../cache/data/',
@@ -73,12 +73,14 @@ def read_data(raw_data_dir='../raw_data/data/', data_dir='../cache/data/',
     return (data_tr, data_va, u_attr, i_attr, item_ind2logit_ind,
             logit_ind2item_ind, user_index, item_index)
 
-
+'''
+when new set of users and items are used in the testing phase
+'''
 def read_data2(raw_data_dir='../raw_data/data/', data_dir='../cache/data/',
               combine_att='mix', logits_size_tr='10000',
               thresh=2, use_user_feature=True, use_item_feature=True, 
               no_user_id=False, no_item_id=False, test=False, mylog=None,
-              raw_data_daily='../raw_data_daily/'):
+              raw_data_daily='../raw_data_daily/', reverse=True):
 
     if not mylog:
         def mylog(val):
@@ -90,10 +92,26 @@ def read_data2(raw_data_dir='../raw_data/data/', data_dir='../cache/data/',
         exit(-1)
         
     else:
+        if reverse: 
+            (users, items, user_features, item_features, user_index, 
+                item_index) = load_raw_data2(
+                data_dir=raw_data_dir, data_daily_dir=raw_data_daily)
+            target_items_list = list(pickle.load(open(os.path.join(raw_data_daily, 'daily_target_users_set'))))
+        else:
+            (users, items, user_features, item_features, user_index, 
+                item_index) = load_raw_data3(
+                data_dir=raw_data_dir, data_daily_dir=raw_data_daily)
+            target_user_set = set(pickle.load(open(os.path.join(raw_data_daily, 'daily_target_users_set'))))
+            import numpy as np
+            users2 = np.copy(users)
+            count = 0
+            for j in range(len(users)):
+                if users[j,0] in target_user_set:
+                    users2[count, :] = users[j, :]
+                    count += 1
+            users2 = users2[:count, :]
 
-        (users, items, user_features, item_features, user_index, 
-            item_index, target_items_list) = load_raw_data2(
-            data_dir=raw_data_dir, data_daily_dir=raw_data_daily)
+            target_items_list = list(items[:,0])
         if not use_user_feature:
             n = len(users)
             users = users[:, 0].reshape(n, 1)

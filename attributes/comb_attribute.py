@@ -7,7 +7,10 @@ import math
 class Comb_Attributes(object):
   def __init__(self):
     return 
-
+  '''
+  new users: tokenize 
+  partial items: first tokenize original, then create output layer mapping
+  '''
   def get_attributes2(self, users, items, user_features, item_features,
     target_item_inds):
     # create_dictionary
@@ -25,6 +28,7 @@ class Comb_Attributes(object):
       num_features_mulhot, features_mulhot, mulhot_max_leng, mulhot_starts, 
       mulhot_lengs, v_sizes_cat, v_sizes_mulhot)
 
+    print(item_feature_types, item_feature_names)
     # create item feature map
     items_cp = np.copy(items)
     (num_features_cat2, features_cat2, num_features_mulhot2, features_mulhot2,

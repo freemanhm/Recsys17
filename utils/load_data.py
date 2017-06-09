@@ -75,15 +75,21 @@ def load_interactions(data_dir, sep='\t'):
     ints.append(interact)
     names.append(name)
   return ints, names[0]
-
+'''
+load new users
+'''
 def load_raw_data2(data_dir, data_daily_dir):
   users, u_attr, user_index = load_users(data_daily_dir, new_name='daily_u.csv')
   items, i_attr, item_index = load_items(data_dir)
-  import cPickle as pickle
-  t_ids = pickle.load(open(join(data_daily_dir, 
-    'daily_target_users_set'), 'rb'))
-  t_ids = list(t_ids)
-  return users, items, u_attr, i_attr, user_index, item_index, t_ids
+  return users, items, u_attr, i_attr, user_index, item_index
+'''
+load new items
+'''
+def load_raw_data3(data_dir, data_daily_dir):
+  users, u_attr, user_index = load_users(data_dir)
+  items, i_attr, item_index = load_items(data_daily_dir, new_name='daily_u.csv') 
+  return users, items, u_attr, i_attr, user_index, item_index
+
 
 def load_raw_data(data_dir, _submit=0):
   users, u_attr, user_index = load_users(data_dir)

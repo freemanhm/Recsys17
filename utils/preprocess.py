@@ -182,7 +182,7 @@ def tokenize_attribute_map(data_dir, features, feature_types, max_vocabulary_siz
 
     path = "%s_vocab%d_" %(prefix, i)
     vocabulary_paths = [f for f in listdir(data_dir) if f.startswith(path)]
-    assert(len(vocabulary_paths) == 1)
+    assert(len(vocabulary_paths) == 1), 'expected length to be 1 but got %d at i=%d' % (len(vocabulary_paths), i)
     vocabulary_path = join(data_dir, vocabulary_paths[0])
 
     vocab, _ = initialize_vocabulary(vocabulary_path)
